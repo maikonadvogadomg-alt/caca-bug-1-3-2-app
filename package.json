@@ -1,0 +1,51 @@
+{
+  "name": "caca-bug-1-3-2",
+  "version": "1.0.0",
+  "description": "Caca-Bug-1-3 (2)",
+  "author": "Maikon",
+  "private": true,
+  "main": "electron/main.cjs",
+  "portaDoPrograma": 7794,
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.maikonadvogadomgalt.cacabug132.pc",
+    "productName": "Caca-Bug-1-3 (2)",
+    "executableName": "caca-bug-1-3-2",
+    "directories": {
+      "output": "release"
+    },
+    "asar": false,
+    "files": [
+      "**/*",
+      "!android/**",
+      "!.github/**",
+      "!release/**",
+      "!exe/**",
+      "!node_modules/.cache/**",
+      "!*.zip",
+      "!.sk/**",
+      "!apk.config.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icons/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Caca-Bug-1-3 (2)",
+      "artifactName": "caca-bug-1-3-2-Instalar.exe"
+    },
+    "portable": {
+      "artifactName": "caca-bug-1-3-2-sem-instalar.exe"
+    }
+  }
+}

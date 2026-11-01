@@ -1,0 +1,24 @@
+{
+  "titulo": "Caca-Bug-1-3 (2)",
+  "arquivo": "hub.html",
+  "itens": [
+    {
+      "path": "ferramentas/meu-chat/index.html",
+      "nome": "Meu Chat",
+      "desc": "",
+      "on": false,
+      "icone": "ferramentas/meu-chat/icons/icon-192.png"
+    },
+    {
+      "path": "index.html",
+      "nome": "Caça-Bug",
+      "desc": "",
+      "on": true,
+      "icone": "icons/icon.svg"
+    }
+  ],
+  "sub": "",
+  "logo": "",
+  "tema": "dourado",
+  "links": []
+}
