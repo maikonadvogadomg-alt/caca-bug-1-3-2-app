@@ -1,36 +1,35 @@
 # 📋 Plano do projeto: Caca-Bug-1-3 (2)
 
-_Gerado em 31/10/2026, 23:24:40 — sem IA, lendo os arquivos._
+_Gerado em 16/11/2026, 14:18:16 — sem IA, lendo os arquivos._
 
 ## 📊 Visão geral
 | Item | Valor |
 |---|---|
-| Arquivos | 78 |
-| Linhas | 5.266 |
-| Telas/páginas | 3 |
+| Arquivos | 62 |
+| Linhas | 5.368 |
+| Telas/páginas | 2 |
 | Rotas do backend | 0 |
 | Chamadas do app | 3 |
 | Tabelas do banco | 0 |
 | Variáveis de ambiente | 3 |
 
-**Linguagens:** JavaScript (41), Imagem (17), Outros (4), JSON (3), HTML (3), Markdown (3), CSS (2), Imagem SVG (2), YAML (1), Ícone (1), Python (1)
+**Linguagens:** JavaScript (45), Imagem (4), Outros (3), CSS (2), HTML (2), JSON (2), Python (2), Markdown (2)
 
 ## 💡 O que fazer (em ordem)
-1. 🧹 Tirar a Replit de 11 arquivo(s) (🏗️ Preparar → Fazer tudo)
+1. 🧹 Tirar a Replit de 12 arquivo(s) (🏗️ Preparar → Fazer tudo)
 2. 🔐 Criar um .env.example com: BASE_PATH, GITHUB_STEP_SUMMARY, PORT (os valores você coloca no servidor, nunca no código)
 3. 📝 Criar um README.md explicando como rodar
 4. 🚫 Criar .gitignore (não mandar node_modules ao GitHub)
 
 ## 🚀 Por onde começa
-- `ferramentas/meu-chat/index.html`
-- `index.html`
+- `Caca-Bug-1-3/ferramentas/Meu-Chat/index.html`
+- `Caca-Bug-1-3/index.html`
 
 ## 📱 Telas e páginas
 | Endereço | Arquivo |
 |---|---|
-| `ferramentas/meu-chat/index.html` | ferramentas/meu-chat/index.html |
-| `hub.html` | hub.html |
-| `index.html` | index.html |
+| `Caca-Bug-1-3/ferramentas/Meu-Chat/index.html` | Caca-Bug-1-3/ferramentas/Meu-Chat/index.html |
+| `Caca-Bug-1-3/index.html` | Caca-Bug-1-3/index.html |
 
 ## 🖥️ Rotas do backend
 _Nenhum encontrado._
@@ -38,9 +37,9 @@ _Nenhum encontrado._
 ## 📡 O que o app pede ao servidor
 | Método | Endereço | Onde |
 |---|---|---|
-| POST | `/models/${encodeURIComponent(c.modelo)}:generateContent` | ferramentas/cirurgiao.js |
-| POST | `/messages` | ferramentas/cirurgiao.js |
-| POST | `/chat/completions` | ferramentas/cirurgiao.js |
+| POST | `/models/${encodeURIComponent(c.modelo)}:generateContent` | Caca-Bug-1-3/ferramentas/cirurgiao.js |
+| POST | `/messages` | Caca-Bug-1-3/ferramentas/cirurgiao.js |
+| POST | `/chat/completions` | Caca-Bug-1-3/ferramentas/cirurgiao.js |
 
 ## 🔌 O que falta no backend
 ✅ Tudo que o app chama tem rota no projeto (ou o app não usa servidor).
@@ -110,19 +109,21 @@ _Só os nomes. Os valores (chaves, senhas) nunca vão no código nem no GitHub._
 - unpkg.com
 - www.google.com
 - www.npmjs.com
+- www.perplexity.ai
 
 ## 🧹 Arquivos com coisa da Replit
-- ferramentas/analisador-universal.js
-- ferramentas/cirurgiao.js
-- ferramentas/meu-chat/js/lib/guia-maikon.js
-- ferramentas/montar.py
-- ferramentas/projeto-lab.js
-- js/30-projeto.js
-- js/60-comparar.js
-- js/99-app.js
-- js/lib/expo-core.js
-- js/lib/plano-core.js
-- service-worker.js
+- Caca-Bug-1-3/ferramentas/analisador-universal.js
+- Caca-Bug-1-3/ferramentas/cirurgiao.js
+- Caca-Bug-1-3/ferramentas/Meu-Chat/js/33-contextos.js
+- Caca-Bug-1-3/ferramentas/Meu-Chat/js/lib/guia-maikon.js
+- Caca-Bug-1-3/ferramentas/Meu-Chat/js/lib/guia-versoes.js
+- Caca-Bug-1-3/ferramentas/montar.py
+- Caca-Bug-1-3/ferramentas/projeto-lab.js
+- Caca-Bug-1-3/js/30-projeto.js
+- Caca-Bug-1-3/js/60-comparar.js
+- Caca-Bug-1-3/js/99-app.js
+- Caca-Bug-1-3/js/lib/expo-core.js
+- Caca-Bug-1-3/js/lib/plano-core.js
 
 ## 🔁 Roteiro para recriar fora da Replit
 1. Importar o projeto no Mini SK e tocar em 🏗️ Preparar → ✅ Fazer tudo (tira a Replit, cria os arquivos que faltam).
@@ -133,95 +134,78 @@ _Só os nomes. Os valores (chaves, senhas) nunca vão no código nem no GitHub._
 
 ## 🌳 Árvore de arquivos
 ```
-├─ 📁 .github/
-│  └─ 📁 workflows/
-│     └─ apk.yml
-├─ 📁 css/
-│  └─ app.css
-├─ 📁 ferramentas/
-│  ├─ 📁 meu-chat/
-│  │  ├─ 📁 css/
-│  │  │  └─ app.css
-│  │  ├─ 📁 icons/
-│  │  │  ├─ icon-192.png
-│  │  │  └─ icon-512.png
-│  │  ├─ 📁 js/
-│  │  │  ├─ 📁 lib/
-│  │  │  │  ├─ cofre-arquivo.js
-│  │  │  │  └─ guia-maikon.js
-│  │  │  ├─ 00-base.js
-│  │  │  ├─ 10-banco.js
-│  │  │  ├─ 20-provedores.js
-│  │  │  ├─ 30-memoria.js
-│  │  │  ├─ 40-voz.js
-│  │  │  ├─ 50-internet.js
-│  │  │  ├─ 60-previa.js
-│  │  │  ├─ 70-texto.js
-│  │  │  ├─ 80-chat.js
-│  │  │  ├─ 85-config.js
-│  │  │  ├─ 87-cofre.js
-│  │  │  ├─ 90-backup.js
-│  │  │  ├─ 95-ponte-lab.js
-│  │  │  └─ 99-app.js
-│  │  ├─ index.html
-│  │  ├─ LEIA-ME.txt
-│  │  ├─ manifest.json
-│  │  └─ sw.js
-│  ├─ ai-code-studio.js
-│  ├─ analisador-universal.js
-│  ├─ cirurgiao.js
-│  ├─ gerador-eas.js
-│  ├─ limpador.js
-│  ├─ montar.py
-│  ├─ ordem.txt
-│  ├─ perito.js
-│  ├─ projeto-lab.js
-│  └─ triagem.js
-├─ 📁 icons/
-│  ├─ apple-touch-icon.png
-│  ├─ icon-128.png
-│  ├─ icon-144.png
-│  ├─ icon-152.png
-│  ├─ icon-16.png
-│  ├─ icon-180.png
-│  ├─ icon-192.png
-│  ├─ icon-32.png
-│  ├─ icon-384.png
-│  ├─ icon-48.png
-│  ├─ icon-512.png
-│  ├─ icon-72.png
-│  ├─ icon-96.png
-│  ├─ icon.svg
-│  ├─ maskable-192.png
-│  ├─ maskable-512.png
-│  └─ maskable.svg
-├─ 📁 js/
-│  ├─ 📁 lib/
-│  │  ├─ expo-core.js
-│  │  ├─ organizar-core.js
-│  │  └─ plano-core.js
-│  ├─ 00-core.js
-│  ├─ 20-zip.js
-│  ├─ 30-projeto.js
-│  ├─ 40-ferramentas.js
-│  ├─ 45-organizar.js
-│  ├─ 50-relatorios.js
-│  ├─ 60-comparar.js
-│  ├─ 70-ia.js
-│  └─ 99-app.js
-├─ 📁 lib/
-│  ├─ diff-LICENSE.txt
-│  ├─ diff.min.js
-│  ├─ jszip-LICENSE.md
-│  └─ jszip.min.js
-├─ apk.config.json
-├─ favicon.ico
-├─ hub.html
-├─ hub.webmanifest
-├─ index.html
-├─ LEIA-ME.md
-├─ manifest.json
-├─ PLANO.md
-├─ service-worker.js
-└─ sw.js
+└─ 📁 Caca-Bug-1-3/
+   ├─ 📁 css/
+   │  └─ app.css
+   ├─ 📁 ferramentas/
+   │  ├─ 📁 Meu-Chat/
+   │  │  ├─ 📁 css/
+   │  │  │  └─ app.css
+   │  │  ├─ 📁 icons/
+   │  │  │  ├─ icon-192.png
+   │  │  │  └─ icon-512.png
+   │  │  ├─ 📁 js/
+   │  │  │  ├─ 📁 lib/
+   │  │  │  │  ├─ cofre-arquivo.js
+   │  │  │  │  ├─ guia-maikon.js
+   │  │  │  │  ├─ guia-versoes.js
+   │  │  │  │  └─ jszip.min.js
+   │  │  │  ├─ 00-base.js
+   │  │  │  ├─ 10-banco.js
+   │  │  │  ├─ 20-provedores.js
+   │  │  │  ├─ 30-memoria.js
+   │  │  │  ├─ 33-contextos.js
+   │  │  │  ├─ 34-guia.js
+   │  │  │  ├─ 35-jeito.js
+   │  │  │  ├─ 40-voz.js
+   │  │  │  ├─ 50-internet.js
+   │  │  │  ├─ 60-previa.js
+   │  │  │  ├─ 70-texto.js
+   │  │  │  ├─ 80-chat.js
+   │  │  │  ├─ 85-config.js
+   │  │  │  ├─ 87-cofre.js
+   │  │  │  ├─ 90-backup.js
+   │  │  │  ├─ 95-ponte-lab.js
+   │  │  │  └─ 99-app.js
+   │  │  ├─ index.html
+   │  │  ├─ LEIA-ME.txt
+   │  │  ├─ manifest.json
+   │  │  ├─ sw.js
+   │  │  └─ voz-francisco.py
+   │  ├─ ai-code-studio.js
+   │  ├─ analisador-universal.js
+   │  ├─ cirurgiao.js
+   │  ├─ gerador-eas.js
+   │  ├─ limpador.js
+   │  ├─ montar.py
+   │  ├─ ordem.txt
+   │  ├─ perito.js
+   │  ├─ projeto-lab.js
+   │  └─ triagem.js
+   ├─ 📁 icons/
+   │  ├─ icon-192.png
+   │  └─ icon-512.png
+   ├─ 📁 js/
+   │  ├─ 📁 lib/
+   │  │  ├─ expo-core.js
+   │  │  ├─ organizar-core.js
+   │  │  └─ plano-core.js
+   │  ├─ 00-core.js
+   │  ├─ 20-zip.js
+   │  ├─ 30-projeto.js
+   │  ├─ 40-ferramentas.js
+   │  ├─ 45-organizar.js
+   │  ├─ 50-relatorios.js
+   │  ├─ 60-comparar.js
+   │  ├─ 70-ia.js
+   │  └─ 99-app.js
+   ├─ 📁 lib/
+   │  ├─ diff-LICENSE.txt
+   │  ├─ diff.min.js
+   │  ├─ jszip-LICENSE.md
+   │  └─ jszip.min.js
+   ├─ index.html
+   ├─ LEIA-ME.md
+   ├─ manifest.json
+   └─ sw.js
 ```

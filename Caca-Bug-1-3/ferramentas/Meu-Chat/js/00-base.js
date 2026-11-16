@@ -1,7 +1,7 @@
 /* Meu Chat — 00-base.js: peças comuns (MC). */
 (function () {
   'use strict';
-  const MC = window.MC = { versao: '2026.10.29-e', ouvintes: {} };
+  const MC = window.MC = { versao: '2026.11.16-f', ouvintes: {} };
   MC.$ = (s, r) => (r || document).querySelector(s);
   MC.$$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   MC.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

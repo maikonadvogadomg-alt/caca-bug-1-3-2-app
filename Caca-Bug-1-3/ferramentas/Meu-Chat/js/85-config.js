@@ -12,7 +12,7 @@
     const usados = [...new Set(lista.map((c) => c.provedor))];
     const buscaTipo = MC.pref.get('buscaTipo', ''), buscaChave = await MC.banco.kv('buscaChave', '');
     MC.$('#config-corpo').innerHTML =
-      '<div class="cartao"><h3>🔑 Chaves das IAs</h3><p class="mudo pequeno">Ficam só neste aparelho. Grátis: ' + Object.keys(P).filter((k) => P[k].gratis).map((k) => '<a href="' + P[k].site + '" target="_blank" rel="noopener">' + E(P[k].nome) + '</a>').join(' · ') + '. Paga (quando quiser): <a href="' + P.claude.site + '" target="_blank" rel="noopener">Claude</a>.</p>' +
+      '<div class="cartao"><h3>🔑 Chaves das IAs</h3><p class="mudo pequeno">Ficam só neste aparelho. Grátis: ' + Object.keys(P).filter((k) => P[k].gratis).map((k) => '<a href="' + P[k].site + '" target="_blank" rel="noopener">' + E(P[k].nome) + '</a>').join(' · ') + '. Pagas (quando quiser): <a href="' + P.claude.site + '" target="_blank" rel="noopener">Claude</a> · <a href="' + P.perplexity.site + '" target="_blank" rel="noopener">Perplexity</a> (pesquisa com fontes).</p>' +
         (lista.length ? lista.map((c) => '<div class="chave" data-id="' + c.id + '"><button class="ic" data-k="ativar" title="Usar esta primeiro">' + (c.id === ativa ? '⭐' : '☆') + '</button><div style="flex:1;min-width:0"><b>' + E(c.apelido || P[c.provedor].nome) + '</b><br><code class="mudo pequeno">' + (c.automatica ? 'sem chave · ligado no aparelho' : E(c.chave.slice(0, 6) + '…' + c.chave.slice(-4))) + '</code></div><button class="bt peq" data-k="testar">🧪 Testar</button><button class="ic" data-k="apagar" title="Apagar">🗑</button></div>').join('') : '<p class="pequeno">Nenhuma chave ainda.</p>') +
         '<div class="linha"><input class="campo" id="nova-chave" placeholder="Cole a chave aqui" autocomplete="off" style="flex:1"></div>' +
         '<div class="linha"><select class="campo" id="nova-prov" style="flex:1"><option value="">(descobrir sozinho)</option>' + Object.keys(P).map((k) => '<option value="' + k + '">' + E(P[k].nome) + '</option>').join('') + '</select><input class="campo" id="nova-apelido" placeholder="Apelido (opcional)" style="flex:1"></div>' +
@@ -24,8 +24,11 @@
         '<div class="linha"><select class="campo" id="cf-busca-tipo" style="flex:1"><option value="">Nenhuma</option>' + Object.keys(MC.internet.BUSCAS).map((k) => '<option value="' + k + '"' + (k === buscaTipo ? ' selected' : '') + '>' + E(MC.internet.BUSCAS[k].nome) + '</option>').join('') + '</select></div>' +
         '<div class="linha"><input class="campo" id="cf-busca-chave" placeholder="Chave da busca" value="' + E(buscaChave) + '" autocomplete="off" style="flex:1"><button class="bt" id="cf-busca-testar">🧪</button></div><div id="busca-status" class="pequeno"></div></div>' +
       '<div class="cartao" id="cartao-voz"><h3>🔊 Voz</h3>' +
-        '<div class="linha"><label class="op"><input type="radio" name="cf-motor" value="aparelho"' + (MC.voz.motor() === 'aparelho' ? ' checked' : '') + '> 📱 Voz do aparelho</label><label class="op"><input type="radio" name="cf-motor" value="gemini"' + (MC.voz.motor() === 'gemini' ? ' checked' : '') + '> ✨ Gemini</label></div>' +
-        (MC.voz.motor() === 'aparelho'
+        '<div class="linha"><label class="op"><input type="radio" name="cf-motor" value="aparelho"' + (MC.voz.motor() === 'aparelho' ? ' checked' : '') + '> 📱 Voz do aparelho</label><label class="op"><input type="radio" name="cf-motor" value="francisco"' + (MC.voz.motor() === 'francisco' ? ' checked' : '') + '> 🗣 Francisco (grátis)</label><label class="op"><input type="radio" name="cf-motor" value="gemini"' + (MC.voz.motor() === 'gemini' ? ' checked' : '') + '> ✨ Gemini</label></div>' +
+        (MC.voz.motor() === 'francisco'
+          ? '<p class="mudo pequeno">A voz do jurídico antigo, <b>grátis e sem chave</b>. Ela é feita pelo programinha <b>voz-francisco.py</b>, ligado no <b>Termux</b> (celular) ou no <b>PC</b>. Uma vez só: <code>pkg install python</code> e <code>pip install edge-tts</code> (no PC: instale o Python e rode <code>pip install edge-tts</code>). Depois: <code>python voz-francisco.py</code> e deixe aberto. Se estiver desligado, leio com a voz do aparelho e aviso.</p>' +
+            '<div class="linha"><select class="campo" id="cf-voz-fr" style="flex:1">' + ['pt-BR-FranciscoNeural', 'pt-BR-AntonioNeural', 'pt-BR-FranciscaNeural', 'pt-BR-ThalitaNeural'].map((v) => '<option' + (v === MC.pref.get('vozFrancisco', 'pt-BR-FranciscoNeural') ? ' selected' : '') + '>' + v + '</option>').join('') + '</select><button class="bt" id="cf-voz-testar">🎧 Ouvir</button><button class="bt" id="cf-fr-baixar">⬇ voz-francisco.py</button></div>'
+          : MC.voz.motor() === 'aparelho'
           ? '<p class="mudo pequeno">Funciona com <b>qualquer IA</b>, grátis e sem limite, e <b>começa a falar enquanto a resposta chega</b>. As ⭐ são as vozes naturais.' + (MC.voz.temAndroid ? ' (vozes do Android)' : ' No computador, abra pelo <b>Edge</b> para ter as vozes neurais da Microsoft (Francisca, Antonio).') + '</p>' +
             '<div class="linha"><select class="campo" id="cf-voz-ap" style="flex:1">' + opcoesVoz() + '</select></div>' +
             '<div class="linha"><span class="pequeno" style="min-width:6.5em">Velocidade <b id="cf-vel-v">' + (+MC.pref.get('vozVelocidade', 1.15)).toFixed(2) + '</b></span><input type="range" id="cf-vel" min="0.6" max="2" step="0.05" value="' + MC.pref.get('vozVelocidade', 1.15) + '" style="flex:1"></div>' +
@@ -35,6 +38,7 @@
             '<div class="linha"><select class="campo" id="cf-voz" style="flex:1">' + MC.voz.VOZES.map((v) => '<option' + (v === MC.pref.get('voz', 'Kore') ? ' selected' : '') + '>' + v + '</option>').join('') + '</select><button class="bt" id="cf-voz-testar">🎧 Ouvir</button></div>' +
             '<input class="campo" id="cf-estilo" value="' + E(MC.pref.get('estiloVoz2', '')) + '" placeholder="Jeito de falar (opcional) — ex.: calma e clara" title="Como ela deve falar">') +
         '<label class="pequeno" style="display:block;margin-top:6px"><input type="checkbox" id="cf-mandar"' + (MC.pref.get('mandarAoFalar', true) ? ' checked' : '') + '> 🎤 Mandar sozinho quando eu parar de falar</label></div>' +
+      '<div class="cartao" id="cartao-jeito"></div>' +
       '<div class="cartao"><h3>📝 Instruções para a IA</h3><p class="mudo pequeno">Vai junto em toda conversa (ex.: "responda curto", "sou advogado previdenciarista").</p><textarea class="campo" id="cf-instr" rows="4">' + E(MC.pref.get('instrucoes', '')) + '</textarea>' +
         '<div class="linha"><span class="pequeno">Mensagens que vão junto:</span><input type="number" class="campo" id="cf-contexto" min="4" max="200" value="' + MC.pref.get('contexto', 30) + '" style="width:6em"></div></div>' +
       '<div class="cartao"><h3>🎨 Tema</h3><select class="campo" id="cf-tema"><option value="">Automático</option><option value="escuro">Escuro</option><option value="claro">Claro</option></select></div>' +
@@ -42,6 +46,7 @@
       '<p class="mudo pequeno">Meu Chat ' + MC.versao + '</p>';
     MC.$('#cf-tema').value = MC.pref.get('tema', '');
     if (MC.cofre) await MC.cofre.pintar();
+    if (MC.jeito) await MC.jeito.pintar();
   }
   async function clique(e) {
     const b = e.target.closest('button'); if (!b) return;
@@ -62,7 +67,8 @@
       pintar();
     }
     if (b.id === 'cf-ollama-procurar') { b.textContent = '⏳'; const ok = await MC.ia.procurarOllama(); MC.aviso(ok ? '🦙 Achei o Ollama!' : '🦙 Não achei o Ollama ligado.', ok ? 'ok' : 'erro'); pintar(); }
-    if (b.id === 'cf-voz-testar') { if (MC.$('#cf-voz')) MC.pref.set('voz', MC.$('#cf-voz').value); MC.voz.falar('Olá, Maikon! Esta é a minha voz. Eu posso ler as respostas para você, enquanto elas chegam.'); }
+    if (b.id === 'cf-fr-baixar') { fetch('voz-francisco.py').then((r) => { if (!r.ok) throw new Error(); return r.blob(); }).then((bl) => MC.baixar('voz-francisco.py', bl)).catch(() => MC.aviso('Não achei o arquivo aqui. Abra o Meu Chat pelo endereço dele (não direto do arquivo).', 'erro')); }
+    if (b.id === 'cf-voz-testar') { if (MC.$('#cf-voz-fr')) MC.pref.set('vozFrancisco', MC.$('#cf-voz-fr').value); if (MC.$('#cf-voz')) MC.pref.set('voz', MC.$('#cf-voz').value); MC.voz.falar('Olá, Maikon! Esta é a minha voz. Eu posso ler as respostas para você, enquanto elas chegam.'); }
     if (b.id === 'cf-voz-jur') { MC.pref.set('vozVelocidade', 1.15); MC.pref.set('vozTom', 0.95); pintar(); MC.aviso('⚖️ Velocidade 1.15 e tom 0.95, igual ao seu jurídico.', 'ok'); }
     if (b.id === 'cf-busca-testar') { const st = MC.$('#busca-status'); st.textContent = '⏳'; try { const r = await MC.internet.buscar('previdência social INSS'); st.textContent = r ? '✅ Funciona: ' + r.length + ' resultados' : 'Escolha o serviço e cole a chave.'; } catch (er) { st.textContent = '❌ ' + er.message + (/Failed to fetch/.test(er.message) ? ' (o navegador bloqueou: esse serviço pode não aceitar pedidos direto do celular)' : ''); } }
   }
@@ -73,6 +79,7 @@
     if (t.id === 'cf-revezar') MC.pref.set('revezar', t.checked);
     if (t.id === 'cf-voz') MC.pref.set('voz', t.value);
     if (t.id === 'cf-estilo') MC.pref.set('estiloVoz2', t.value);
+    if (t.id === 'cf-voz-fr') MC.pref.set('vozFrancisco', t.value);
     if (t.name === 'cf-motor') { MC.pref.set('motorVoz', t.value); MC.voz.pararFala(); pintar(); }
     if (t.id === 'cf-voz-ap') MC.pref.set('vozAparelhoNome', t.value);
     if (t.id === 'cf-vel') MC.pref.set('vozVelocidade', +t.value);
@@ -84,7 +91,7 @@
     if (t.id === 'cf-busca-chave') MC.banco.kvSet('buscaChave', t.value.trim());
     if (t.id === 'cf-tema') { MC.pref.set('tema', t.value); aplicarTema(); }
   }
-  function aplicarTema() { const t = MC.pref.get('tema', ''); if (t) document.documentElement.dataset.tema = t; else delete document.documentElement.dataset.tema; }
+  function aplicarTema() { const t = MC.pref.get('tema', ''); if (t) document.documentElement.dataset.tema = t; else delete document.documentElement.dataset.tema; const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0f172a'; }
   async function abrir() { await pintar(); MC.abrirPainel('painel-config'); }
   document.addEventListener('DOMContentLoaded', () => {
     aplicarTema();

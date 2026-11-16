@@ -40,11 +40,11 @@
     if (m.papel === 'eu') return '<div class="msg eu" data-i="' + i + '">' + fotos + (m.texto ? '<div class="bolha">' + E(m.texto) + '</div>' : '') +
       '<div class="info">' + hora(m.quando) + '<button data-m="copiar">📋</button><button data-m="memoria" title="Guardar na memória">🧠</button></div></div>';
     const r = MC.texto.render((m.texto || '').replace(/^\s*\**LEVAR PARA O CLAUDE\**\s*\.?\s*$/gim, ''));
-    const fontes = (m.fontes || []).length ? '<div class="fontes">🔗 Fontes:' + dedup(m.fontes).slice(0, 8).map((f) => '<a href="' + E(f.url) + '" target="_blank" rel="noopener">' + E(f.titulo || f.url) + '</a>').join('') + '</div>' : '';
+    const fontes = (m.fontes || []).length ? '<div class="fontes">🔗 Fontes:' + dedup(m.fontes).slice(0, 12).map((f, k) => '<a href="' + E(f.url) + '" target="_blank" rel="noopener">[' + (k + 1) + '] ' + E(f.titulo || f.url) + '</a>').join('') + '</div>' : '';
     const feitos = (m.feitos || []).map((f) => '<div class="guardei">' + E(f) + '</div>').join('');
     const erro = m.erro ? '<div style="color:var(--er);white-space:pre-wrap">⚠ ' + E(m.erro) + '</div><div class="linha">' + (m.erro.includes('SEM_CHAVE') ? '' : '<button class="bt peq" data-m="denovo">↻ Tentar de novo</button>') + '<button class="bt peq" data-m="config">⚙️ Chaves</button></div>' : '';
     return '<div class="msg ia" data-i="' + i + '"><div class="bolha">' + r.html + erro + fontes + feitos + '</div>' +
-      '<div class="info">' + hora(m.quando) + (m.ia ? ' · ' + E(m.ia) : '') + '<button data-m="copiar">📋</button><button data-m="ouvir" title="Ouvir">🔊</button><button data-m="memoria" title="Guardar na memória">🧠</button>' + (i === conv.msgs.length - 1 ? '<button data-m="denovo" title="Responder de novo">↻</button><button data-m="claude" title="Copia um resumo desta conversa (sem as chaves) para colar no app do Claude">📋→Claude</button>' : '') + '</div>' +
+      '<div class="info">' + hora(m.quando) + (m.ia ? ' · ' + E(m.ia) : '') + '<button data-m="copiar">📋</button><button data-m="ouvir" title="Ouvir">🔊</button><button data-m="memoria" title="Guardar na memória">🧠</button><button data-m="contexto" title="Guardar esta resposta como 📌 contexto">📌</button>' + (i === conv.msgs.length - 1 ? '<button data-m="denovo" title="Responder de novo">↻</button><button data-m="claude" title="Copia um resumo desta conversa (sem as chaves) para colar no app do Claude">📋→Claude</button>' : '') + '</div>' +
       (/LEVAR PARA O CLAUDE/i.test(m.texto || '') ? '<div class="linha"><button class="bt primario peq" data-m="claude">📋 Levar para o Claude</button></div>' : '') + '</div>';
   }
   const dedup = (l) => { const s = new Set(); return l.filter((f) => f.url && !s.has(f.url) && s.add(f.url)); };
@@ -53,7 +53,7 @@
     const el = MC.$('#conversa');
     MC.$('#tit-conversa').textContent = conv.titulo || 'Meu Chat';
     if (!conv.msgs.length) {
-      el.innerHTML = '<div class="vazio"><h2>💬 Meu Chat</h2><p>Escreva ou toque no 🎤 para falar.<br>📷 manda foto ou print · 🌐 pesquisa na internet · 🔗 cole um link para ela ler · 🧠 ela lembra de você.</p><p class="pequeno">Primeira vez? Toque em ⚙️ e cole uma chave grátis do Gemini.</p></div>';
+      el.innerHTML = '<div class="vazio"><h2>💬 Meu Chat</h2><p>Escreva ou toque no 🎤 para falar.<br>📷 manda foto ou print · 🌐 pesquisa na internet · 🔗 cole um link para ela ler · 🧠 ela lembra de você.</p><p class="pequeno">Primeira vez? Toque em ⚙️ e cole uma chave <b>grátis</b> (Groq, Gemini ou OpenRouter — qualquer uma serve).<br>🔊 A voz é a do <b>seu celular</b> (grátis, sem chave). Gemini para voz é só opcional.</p></div>';
       return;
     }
     el.innerHTML = conv.msgs.map(htmlMsg).join('');
@@ -88,10 +88,13 @@
       const ultimo = conv.msgs[conv.msgs.length - 2];
       const net = await MC.internet.preparar(ultimo.texto || '', ativa.provedor, busca);
       if (net.avisos.length) MC.aviso(net.avisos.join(' · '), 'erro');
-      const sistema = await MC.memoria.sistema(net.extras ? 'INFORMAÇÕES DE AGORA (internet):\n' + net.extras : '');
       const max = MC.pref.get('contexto', 30);
+      const resumoVelho = (conv.resumo && conv.msgs.length - 1 > max) ? 'RESUMO DO COMEÇO DESTA CONVERSA (são as mensagens antigas que não vão mais junto; use para não esquecer o que já foi dito):\n' + conv.resumo : '';
+      const extraTxt = [net.extras ? 'INFORMAÇÕES DE AGORA (internet):\n' + net.extras : '', resumoVelho].filter(Boolean).join('\n\n');
+      const sistema = await MC.memoria.sistema(extraTxt);
       const hist = conv.msgs.slice(0, -1).filter((m) => !m.erro).slice(-max).map((m, k, arr) => ({ papel: m.papel, texto: m.texto, fotos: k >= arr.length - 4 ? (m.fotos || []) : [] }));
       // 🔊 com a "Voz do aparelho", ela começa a falar enquanto a resposta chega (frase por frase)
+      if (MC.$('#op-comparar').checked) { await comparar(ia, bolha, lista, extraTxt, hist, busca, net); throw { comparou: true }; }
       voz = (MC.$('#op-falar').checked || MC.$('#op-maos').checked) ? MC.voz.fluxo() : null;
       const r = await MC.ia.conversar(sistema, hist, { busca, sinal: controle.signal },
         (parcial) => { if (voz) voz.empurrar(parcial); bolha.innerHTML = MC.texto.render(parcial).html; const c = MC.$('#conversa'); if (c.scrollHeight - c.scrollTop - c.clientHeight < 200) c.scrollTop = c.scrollHeight; },
@@ -100,17 +103,67 @@
       Object.assign(ia, { texto: m.limpo, feitos: m.feitos, fontes: dedup((r.fontes || []).concat(net.fontes)), ia: r.apelido + ' · ' + r.modelo, quando: Date.now() });
       MC.$('#tit-ia').textContent = r.apelido + ' · ' + r.modelo;
     } catch (e) {
-      if (e.name === 'AbortError') { if (voz) { voz.cancelar(); voz = null; } ia.texto = (ia.texto || bolha.innerText || '') + '\n\n_(parei)_'; }
+      if (e && e.comparou) { /* já está pronto */ }
+      else if (e.name === 'AbortError') { if (voz) { voz.cancelar(); voz = null; } ia.texto = (ia.texto || bolha.innerText || '') + '\n\n_(parei)_'; }
       else if (e.message === 'SEM_CHAVE') ia.erro = 'SEM_CHAVE: ainda não tem nenhuma chave de IA. Toque em ⚙️ Chaves e cole uma (a do Gemini é grátis).';
       else ia.erro = e.message;
     }
     controle = null; btE.textContent = '➤'; btE.title = 'Enviar';
     await guardar(); pintar();
+    resumirSePrecisar(conv).catch(() => {});
     const falar = MC.$('#op-falar').checked || MC.$('#op-maos').checked;
     const depois = () => { if (MC.$('#op-maos').checked) setTimeout(() => ouvirEMandar(), 300); };
     if (voz) { if (ia.texto && !ia.erro) voz.terminar(ia.texto, depois); else voz.cancelar(); }
     else if (falar && ia.texto && !ia.erro) MC.voz.falar(ia.texto, depois);
   }
+  // ⚖️ COMPARAR: manda a MESMA pergunta para várias IAs ao mesmo tempo e mostra uma embaixo da outra
+  async function comparar(ia, bolha, lista, extraTxt, hist, busca, net) {
+    const marcadas = MC.pref.get('comparar:ids', null);
+    let quais = lista.filter((c) => marcadas ? marcadas.includes(c.id) : true);
+    if (!marcadas) { const vistos = new Set(); quais = quais.filter((c) => !vistos.has(c.provedor) && vistos.add(c.provedor)).slice(0, 3); }
+    if (quais.length < 2) throw new Error('Para comparar, guarde pelo menos 2 chaves de IAs diferentes (⚙️) e escolha quais em ⚖️ (toque e segure o ⚖️ Comparar).');
+    const partes = quais.map((c) => ({ c, nome: c.apelido || MC.ia.P[c.provedor].nome, texto: '', fontes: [], modelo: '' }));
+    const juntar = () => partes.map((p) => '### ' + p.nome + (p.modelo ? ' · ' + p.modelo : '') + '\n\n' + (p.texto || (p.erro ? '⚠ ' + p.erro : '_(pensando…)_'))).join('\n\n⸻⸻⸻\n\n');
+    const tela = () => { bolha.innerHTML = MC.texto.render(juntar()).html; };
+    tela();
+    await Promise.all(partes.map(async (p) => {
+      try {
+        p.modelo = await MC.ia.modeloDe(p.c.provedor);
+        const sis = await MC.memoria.sistema(extraTxt, p.c.provedor); // cada IA com o jeito DELA
+        const r = await MC.ia.pedir(p.c.provedor, p.c.chave, p.modelo, sis, hist, { busca: busca && MC.ia.P[p.c.provedor].busca, sinal: controle.signal }, (t) => { p.texto = t; tela(); });
+        p.texto = (await MC.memoria.aplicarMarcas(r.texto)).limpo; p.fontes = r.fontes || [];
+      } catch (e) { if (e.name === 'AbortError') throw e; p.erro = e.message; }
+      tela();
+    }));
+    Object.assign(ia, { texto: juntar(), fontes: dedup([].concat(...partes.map((p) => p.fontes), net.fontes)), ia: '⚖️ ' + partes.map((p) => p.nome).join(' × '), quando: Date.now() });
+  }
+  async function escolherComparar() {
+    const lista = await MC.ia.chaves(); const marc = MC.pref.get('comparar:ids', null);
+    const txt = lista.map((c, k) => (k + 1) + ') ' + (c.apelido || MC.ia.P[c.provedor].nome) + (marc && marc.includes(c.id) ? ' ✔' : '')).join('\n');
+    const r = prompt('⚖️ Quais IAs comparar? Escreva os números separados por vírgula (ex.: 1,3).\nEm branco = automático (até 3 IAs diferentes).\n\n' + txt, marc ? lista.map((c, k) => marc.includes(c.id) ? k + 1 : null).filter(Boolean).join(',') : '');
+    if (r == null) return;
+    const ids = r.split(/[^\d]+/).map(Number).filter((n) => n >= 1 && n <= lista.length).map((n) => lista[n - 1].id);
+    MC.pref.set('comparar:ids', ids.length ? ids : null);
+    MC.aviso(ids.length ? '⚖️ Vou comparar: ' + ids.map((id) => { const c = lista.find((x) => x.id === id); return c.apelido || MC.ia.P[c.provedor].nome; }).join(' × ') : '⚖️ Automático (até 3 IAs diferentes)', 'ok');
+  }
+
+  // 🧠 CONVERSA LONGA: quando as mensagens antigas saem da janela (⚙️ "Mensagens que vão junto"),
+  // a IA faz um resumo delas e ele vai junto — assim ela não esquece o começo da conversa.
+  let resumindo = false;
+  async function resumirSePrecisar(c) {
+    const max = MC.pref.get('contexto', 30), ate = c.resumoAte || 0, limite = c.msgs.length - max;
+    if (resumindo || limite - ate < 6) return; // junta pelo menos 6 mensagens novas antes de resumir (gasta menos)
+    resumindo = true;
+    try {
+      const velhas = c.msgs.slice(ate, limite).filter((m) => !m.erro).map((m) => (m.papel === 'eu' ? 'EU: ' : 'IA: ') + String(m.texto || '').slice(0, 3000)).join('\n\n');
+      const pedido = 'Atualize o RESUMO desta conversa. Junte o resumo anterior com as mensagens novas. Guarde: o assunto, o que foi decidido, os fatos e números importantes, o que ficou combinado e o que ainda falta. Português simples, no máximo 350 palavras, sem chaves nem senhas.\n\n## Resumo anterior\n' + (c.resumo || '(nenhum)') + '\n\n## Mensagens novas\n' + velhas;
+      const r = await MC.ia.conversar('Você resume conversas com fidelidade, sem inventar nada.', [{ papel: 'eu', texto: pedido }], {}, null);
+      const atual = await MC.banco.pegar(c.id) || c;
+      atual.resumo = (r.texto || '').trim(); atual.resumoAte = limite; await MC.banco.salvar(atual);
+      if (conv && conv.id === c.id) { conv.resumo = atual.resumo; conv.resumoAte = limite; }
+    } finally { resumindo = false; }
+  }
+
   function ouvirEMandar() { MC.voz.ouvir((t) => { if (t && MC.$('#op-maos').checked) mandar(t); }); }
 
   // 📋 resumo da conversa pronto para colar no app do Claude (sem as chaves)
@@ -129,6 +182,7 @@
     if (a === 'config') MC.config.abrir();
     if (a === 'memoria') { const t = prompt('Guardar na memória (uma frase curta):', (m.texto || '').slice(0, 200)); if (t && await MC.memoria.lembrar(t)) MC.aviso('🧠 Guardei na memória', 'ok'); }
     if (a === 'claude') return levarParaClaude();
+    if (a === 'contexto') { const nome = prompt('Nome do contexto (para achar depois):', (conv.titulo || 'Conversa') + ' — onde parei'); if (nome == null) return; MC.contextos.novo(nome.trim() || 'Contexto', m.texto || ''); MC.aviso('📌 Guardei como contexto (ligado). Toque em 📌 lá em cima para ver, editar ou desligar.', 'ok'); }
     if (a === 'denovo') { if (conv.msgs[conv.msgs.length - 1].papel === 'ia') conv.msgs.pop(); await guardar(); pintar(); responder(); }
   }
 
@@ -154,6 +208,32 @@
     MC.$('#bt-enviar').onclick = () => mandar();
     MC.$('#bt-mic').onclick = () => { if (MC.voz.falando) { MC.voz.pararFala(); return; } MC.voz.ouvir((t) => { if (t && (MC.$('#op-maos').checked || MC.pref.get('mandarAoFalar', true))) mandar(t); }); };
     MC.$('#bt-foto').onclick = () => MC.$('#in-foto').click();
+    // 15/11: 📎 arquivo de texto/código ou PROJETO .zip → vai para a caixa de texto (a IA lê); imagem → vira foto
+    MC.$('#bt-arq').onclick = () => MC.$('#in-arq').click();
+    MC.$('#in-arq').onchange = async (e) => {
+      const fs = Array.from(e.target.files || []); e.target.value = '';
+      const ent = MC.$('#entrada'); const TXT = /\.(html?|css|js|mjs|jsx|ts|tsx|json|md|txt|py|php|sql|xml|ya?ml|csv|ini|sh|bat|java|kt|c|cpp|cs|go|rs|vue)$/i;
+      for (const f of fs) {
+        try {
+          if (/^image\//.test(f.type)) { await anexar([f]); continue; }
+          let t = '';
+          if (/\.zip$/i.test(f.name)) {
+            if (!window.JSZip) throw new Error('leitor de zip não carregou');
+            const z = await JSZip.loadAsync(f); const todos = Object.values(z.files).filter((x) => !x.dir);
+            const uteis = todos.filter((x) => TXT.test(x.name) && !/(^|\/)(node_modules|dist|build|\.git)\//.test(x.name) && !/\.min\.|package-lock/.test(x.name));
+            t = 'Projeto .zip: ' + f.name + ' (' + todos.length + ' arquivos)\nÁrvore:\n' + todos.slice(0, 300).map((x) => '- ' + x.name).join('\n') + '\n';
+            let total = 0, fora = 0;
+            for (const x of uteis) { const c = await x.async('string'); if (total + c.length > 400000) { fora++; continue; } total += c.length; t += '\nArquivo: ' + x.name + '\n```\n' + c + '\n```\n'; }
+            if (fora) t += '\n(⚠️ ' + fora + ' arquivo(s) ficaram de fora pelo tamanho)\n';
+          } else {
+            if (f.size > 5e6) throw new Error('grande demais (máx. 5 MB) — mande em .zip');
+            t = 'Arquivo: ' + f.name + '\n```\n' + (await f.text()) + '\n```\n';
+          }
+          ent.value += (ent.value ? '\n\n' : '') + t; ent.dispatchEvent(new Event('input'));
+          MC.aviso('📎 ' + f.name + ' anexado', 'ok');
+        } catch (er) { MC.aviso('⚠️ ' + f.name + ': ' + er.message, 'erro'); }
+      }
+    };
     MC.$('#in-foto').onchange = (e) => { anexar(Array.from(e.target.files || [])); e.target.value = ''; };
     MC.$('#anexos').onclick = (e) => { const b = e.target.closest('[data-tirar]'); if (b) { anexos.splice(+b.dataset.tirar, 1); pintarAnexos(); } };
     ent.addEventListener('paste', (e) => { const fs = Array.from((e.clipboardData && e.clipboardData.files) || []); if (fs.length) { e.preventDefault(); anexar(fs); } }); // colar print
@@ -162,7 +242,8 @@
     MC.$('#bt-nova').onclick = () => abrirConversa(null);
     MC.$('#busca-conv').oninput = pintarLista;
     MC.$('#lista-conv').onclick = cliqueLista;
-    for (const id of ['op-busca', 'op-falar', 'op-maos']) { const c = MC.$('#' + id); c.checked = MC.pref.get(id, id === 'op-busca' ? false : false); c.onchange = () => { MC.pref.set(id, c.checked); if (id === 'op-maos' && c.checked) { MC.aviso('🙌 Mãos livres: fale depois do sinal; eu respondo falando e escuto de novo.'); ouvirEMandar(); } if (id === 'op-maos' && !c.checked) MC.voz.parar(); }; }
+    { const bc = MC.$('#op-comparar').closest('label'); let t = 0; bc.addEventListener('contextmenu', (e) => { e.preventDefault(); escolherComparar(); }); bc.addEventListener('touchstart', () => { t = setTimeout(escolherComparar, 650); }, { passive: true }); ['touchend', 'touchmove'].forEach((ev) => bc.addEventListener(ev, () => clearTimeout(t))); }
+    for (const id of ['op-busca', 'op-falar', 'op-maos', 'op-comparar']) { const c = MC.$('#' + id); c.checked = MC.pref.get(id, id === 'op-busca' ? false : false); c.onchange = () => { MC.pref.set(id, c.checked); if (id === 'op-maos' && c.checked) { MC.aviso('🙌 Mãos livres: fale depois do sinal; eu respondo falando e escuto de novo.'); ouvirEMandar(); } if (id === 'op-maos' && !c.checked) MC.voz.parar(); if (id === 'op-comparar' && c.checked) MC.aviso('⚖️ Comparar ligado: a próxima pergunta vai para várias IAs. Toque e segure o ⚖️ para escolher quais.'); }; }
   });
   MC.chat = { abrirConversa, mandar, pintar, get conversa() { return conv; }, recarregar: async () => { if (conv) { const c = await MC.banco.pegar(conv.id); if (c) conv = c; } pintar(); } };
 })(window.MC);

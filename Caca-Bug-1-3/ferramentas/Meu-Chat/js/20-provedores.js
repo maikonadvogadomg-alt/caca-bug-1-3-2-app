@@ -11,12 +11,14 @@
     deepseek: { nome: 'DeepSeek', base: 'https://api.deepseek.com/v1', tipo: 'openai', site: 'https://platform.deepseek.com/api_keys', padrao: 'deepseek-chat' },
     openai: { nome: 'OpenAI (ChatGPT)', base: 'https://api.openai.com/v1', tipo: 'openai', site: 'https://platform.openai.com/api-keys', padrao: 'gpt-4o-mini', foto: true },
     ollama: { nome: '🦙 Ollama (no aparelho)', base: 'http://127.0.0.1:11434/v1', tipo: 'openai', site: 'https://ollama.com/download', padrao: 'llama3.2', foto: true, semChave: true },
-    claude: { nome: 'Claude (Anthropic)', base: 'https://api.anthropic.com/v1', tipo: 'anthropic', site: 'https://console.anthropic.com/settings/keys', padrao: 'claude-sonnet-4-5', foto: true, busca: true },
+    perplexity: { nome: 'Perplexity', base: 'https://api.perplexity.ai', tipo: 'openai', site: 'https://www.perplexity.ai/account/api/keys', padrao: 'sonar-pro', busca: true, fixos: ['sonar-pro', 'sonar', 'sonar-reasoning-pro', 'sonar-deep-research'] },
+    claude: { nome: 'Claude (Anthropic)', base: 'https://api.anthropic.com/v1', tipo: 'anthropic', site: 'https://console.anthropic.com/settings/keys', padrao: 'claude-sonnet-5-5', foto: true, busca: true },
   };
   // descobre o provedor pela cara da chave
   function detectar(chave) {
     chave = (chave || '').trim();
-    if (/^AIza[\w-]{30,}$/.test(chave)) return 'gemini';
+    if (/^AIza[\w-]{30,}$/.test(chave) || /^AQ\.[\w-]{20,}$/.test(chave)) return 'gemini';
+    if (/^pplx-/.test(chave)) return 'perplexity';
     if (/^gsk_/.test(chave)) return 'groq';
     if (/^sk-or-/.test(chave)) return 'openrouter';
     if (/^sk-ant-/.test(chave)) return 'claude';
@@ -59,6 +61,11 @@
       return (j.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => m.name.replace(/^models\//, '')).filter((n) => pontoGemini(n) >= 0).sort((a, b) => pontoGemini(b) - pontoGemini(a));
     }
     if (prov === 'ollama') { await procurarOllama(); return MC.pref.get('modelos:ollama', []); }
+    if (d.fixos) { // o Perplexity não tem lista de modelos: testa com uma pergunta pequenininha
+      const r = await fetch(d.base + '/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + chave, 'content-type': 'application/json' }, body: JSON.stringify({ model: 'sonar', max_tokens: 5, messages: [{ role: 'user', content: 'oi' }] }) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(erroLegivel(r.status, j));
+      return d.fixos.slice();
+    }
     if (d.tipo === 'anthropic') {
       const r = await fetch(d.base + '/models?limit=100', { headers: cabAnthropic(chave) }); const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(erroLegivel(r.status, j));
@@ -93,6 +100,7 @@
     if (status === 404 || /not found|does not exist|is not supported/i.test(t)) return 'MODELO: esse modelo não existe mais ou não aceita isso (' + t.slice(0, 160) + ')';
     return 'Erro ' + status + ': ' + t.slice(0, 200);
   }
+  const corsAviso = (prov, e) => (/Failed to fetch|NetworkError|Load failed/i.test(e.message || '') && prov === 'perplexity') ? new Error('BLOQUEIO: o navegador não deixou falar direto com o Perplexity daqui (' + e.message + '). Tente pelo app instalado/publicado ou pelo computador.') : e;
   const ehLimite = (e) => /^(LIMITE|CHAVE|SERVIDOR|MODELO)/.test(e.message || '') || /Failed to fetch|NetworkError|Load failed/i.test(e.message || '');
   const cabAnthropic = (chave) => ({ 'x-api-key': chave, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'content-type': 'application/json' });
 
@@ -132,7 +140,7 @@
     }
     if (d.tipo === 'anthropic') {
       const corpo = {
-        model: modelo, max_tokens: 8192, system: sistema, stream: true,
+        model: modelo, max_tokens: 8192, system: [{ type: 'text', text: sistema, cache_control: { type: 'ephemeral' } }], stream: true,
         messages: msgs.map((m) => ({ role: m.papel === 'eu' ? 'user' : 'assistant', content: [].concat((m.fotos || []).map((f) => ({ type: 'image', source: { type: 'base64', media_type: f.tipo, data: f.dados } })), m.texto ? [{ type: 'text', text: m.texto }] : []) })).filter((m) => m.content.length),
       };
       if (op.busca) corpo.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }];
@@ -150,11 +158,25 @@
       model: modelo, stream: true,
       messages: [{ role: 'system', content: sistema }].concat(msgs.map((m) => ({ role: m.papel === 'eu' ? 'user' : 'assistant', content: (m.fotos && m.fotos.length && m.papel === 'eu') ? [{ type: 'text', text: m.texto || 'Veja a imagem.' }].concat(m.fotos.map((f) => ({ type: 'image_url', image_url: { url: 'data:' + f.tipo + ';base64,' + f.dados } }))) : (m.texto || '') }))),
     };
+    if (prov === 'perplexity') { // exige pergunta/resposta alternadas, começando pela pergunta; sem fotos
+      const alt = [];
+      for (const m of corpo.messages.slice(1)) { const t = typeof m.content === 'string' ? m.content : (m.content.find((x) => x.type === 'text') || {}).text || ''; const u = alt[alt.length - 1];
+        if (u && u.role === m.role) u.content += '\n\n' + t; else alt.push({ role: m.role, content: t }); }
+      while (alt.length && alt[0].role !== 'user') alt.shift();
+      corpo.messages = [corpo.messages[0]].concat(alt);
+    }
     const cab = { Authorization: 'Bearer ' + chave, 'content-type': 'application/json' };
     if (prov === 'openrouter') { cab['HTTP-Referer'] = location.origin.startsWith('http') ? location.origin : 'https://meuchat.local'; cab['X-Title'] = 'Meu Chat'; }
-    const r = await fetch(d.base + '/chat/completions', { method: 'POST', headers: cab, body: JSON.stringify(corpo), signal: op.sinal });
+    let r; try { r = await fetch(d.base + '/chat/completions', { method: 'POST', headers: cab, body: JSON.stringify(corpo), signal: op.sinal }); } catch (e) { throw corsAviso(prov, e); }
     if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(erroLegivel(r.status, j)); }
-    await lerSSE(r, (j) => { const c = (j.choices || [])[0]; if (c && c.delta && c.delta.content) parcial(c.delta.content); });
+    let cit = null;
+    await lerSSE(r, (j) => {
+      const c = (j.choices || [])[0]; if (c && c.delta && c.delta.content) parcial(c.delta.content);
+      // 🔗 as fontes do Perplexity (na mesma ordem dos [1], [2]… do texto)
+      if (Array.isArray(j.search_results) && j.search_results.length) cit = j.search_results.map((x) => ({ url: x.url, titulo: x.title || x.url }));
+      else if (!cit && Array.isArray(j.citations) && j.citations.length) cit = j.citations.map((u) => ({ url: u, titulo: u }));
+    });
+    if (cit) fontes = cit;
     return { texto, fontes };
   }
 

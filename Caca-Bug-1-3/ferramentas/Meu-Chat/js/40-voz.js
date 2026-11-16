@@ -52,7 +52,9 @@
   }
 
   // ═════════ 📱 VOZ DO APARELHO (qualquer IA, grátis) ═════════
-  const motor = () => MC.pref.get('motorVoz', 'aparelho');
+  const noPC = () => { try { return !!(window.miniskPC || (window.parent && window.parent.miniskPC)); } catch { return false; } };
+  // no programa do PC a voz Francisco já vem dentro: ela é o padrão lá
+  const motor = () => MC.pref.get('motorVoz', noPC() ? 'francisco' : 'aparelho');
   const temAndroid = () => !!(window.AndroidFala && window.AndroidFala.falar);
   const temNavegador = () => 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
   const natural = (n) => /natural|online|neural|network|google|premium|enhanced|melhorad/i.test(n || '');
@@ -79,7 +81,7 @@
     }
     if (!temNavegador()) { MC.aviso('🔊 Este aparelho não tem voz. Use ⚙️ → Voz → Gemini.', 'erro'); aoTerminar(); return; }
     const u = new SpeechSynthesisUtterance(texto); u.lang = 'pt-BR'; u.rate = c.vel; u.pitch = c.tom;
-    const v = speechSynthesis.getVoices().find((x) => (x.voiceURI || x.name) === c.voz) || speechSynthesis.getVoices().find((x) => /pt-BR/i.test(x.lang) && natural(x.name)) || speechSynthesis.getVoices().find((x) => /pt-BR/i.test(x.lang));
+    const v = speechSynthesis.getVoices().find((x) => (x.voiceURI || x.name) === c.voz) || speechSynthesis.getVoices().find((x) => /pt-br-x-pte/i.test(x.name + ' ' + x.voiceURI)) || speechSynthesis.getVoices().find((x) => /pt-BR/i.test(x.lang) && natural(x.name)) || speechSynthesis.getVoices().find((x) => /pt-BR/i.test(x.lang));
     if (v) u.voice = v;
     u.onend = u.onerror = () => aoTerminar();
     speechSynthesis.speak(u);
@@ -102,8 +104,8 @@
   }
 
   // 🔊 falando ENQUANTO chega: MC.voz.fluxo() → .empurrar(textoAtéAgora) … .terminar(textoFinal, aoFim)
-  function fluxo() {
-    if (motor() !== 'aparelho') return null;
+  function fluxo() { return motor() === 'aparelho' ? fluxoAparelho() : null; }
+  function fluxoAparelho() {
     pararFala();
     const meu = { tok: ++filaTok, pendentes: 0, acabou: false, aoFim: null };
     fila = meu; let falado = 0;
@@ -163,7 +165,34 @@
   }
 
   // ── falar um texto inteiro (botão 🔊 da mensagem, teste, ou motor Gemini) ──
+  // 🗣 Francisco grátis: o programinha voz-francisco.py (Termux no celular, ou Python no PC) faz o áudio
+  const FRANCISCO = 'http://127.0.0.1:7790';
+  async function audioFrancisco(t) {
+    let r;
+    try { r = await fetch(FRANCISCO + '/falar', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ texto: t, voz: MC.pref.get('vozFrancisco', 'pt-BR-FranciscoNeural') }) }); }
+    catch (e) { const x = new Error('O 🗣 servidor de voz não está ligado (no Termux ou no PC: python voz-francisco.py)'); x.desligado = true; throw x; }
+    if (!r.ok) { let m = ''; try { m = (await r.json()).erro; } catch {} throw new Error('a voz Francisco falhou' + (m ? ': ' + m : '')); }
+    return r.blob();
+  }
+  async function falarFrancisco(texto, aoFim) {
+    pararFala(); const meu = ++filaTok;
+    const t = paraFala(texto); if (!t) { aoFim && aoFim(); return; }
+    falando = true; marcar();
+    try {
+      const partes = pedacos(t, 700); let prox = null;
+      for (let i = 0; i < partes.length && meu === filaTok; i++) {
+        const atual = prox ? await prox : await audioFrancisco(partes[i]);
+        prox = i + 1 < partes.length ? audioFrancisco(partes[i + 1]) : null;
+        if (meu !== filaTok) break; await tocar(atual);
+      }
+    } catch (e) {
+      if (e.desligado && meu === filaTok) { MC.aviso('🔊 ' + e.message + ' — por enquanto, li com a voz do aparelho.', 'erro'); falando = false; marcar(); const f = fluxoAparelho(); if (f) { f.terminar(texto, aoFim); return; } }
+      else MC.aviso('🔊 ' + e.message, 'erro');
+    }
+    if (meu === filaTok) { falando = false; marcar(); aoFim && aoFim(); }
+  }
   async function falar(texto, aoFim) {
+    if (motor() === 'francisco') return falarFrancisco(texto, aoFim);
     if (motor() === 'aparelho') { const f = fluxo(); if (!f) { aoFim && aoFim(); return; } f.terminar(texto, aoFim); return; }
     pararFala(); const meu = ++filaTok;
     const t = paraFala(texto); if (!t) { aoFim && aoFim(); return; }
@@ -184,6 +213,6 @@
   function pararFala() { filaTok++; fila = null; try { audio && audio.pause(); } catch {} pararAparelho(); falando = false; marcar(); }
   if (temNavegador()) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => MC.emit('vozes'); } catch {} }
   window.__falaPronta = (function (antes) { return function () { try { antes && antes(); } catch {} MC.emit('vozes'); }; })(window.__falaPronta);
-  MC.voz = { VOZES, ouvir, parar, falar, fluxo, pararFala, podeOuvir, vozesAparelho, motor, get falando() { return falando; }, get ouvindo() { return ouvindo; }, paraFala, sintetizar,
+  MC.voz = { FRANCISCO, VOZES, ouvir, parar, falar, fluxo, pararFala, podeOuvir, vozesAparelho, motor, get falando() { return falando; }, get ouvindo() { return ouvindo; }, paraFala, sintetizar,
     get temAndroid() { return temAndroid(); } };
 })(window.MC);

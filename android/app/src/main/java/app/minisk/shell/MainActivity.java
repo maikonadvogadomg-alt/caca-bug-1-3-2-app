@@ -25,6 +25,17 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Gravity;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.graphics.Color;
+import android.text.InputType;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -127,7 +138,9 @@ public class MainActivity extends Activity {
                 if (esquema.equals("blob") || esquema.equals("data") || esquema.equals("about") || esquema.equals("javascript")) return false;
                 // quadros internos (iframe) carregam dentro do app
                 if (!req.isForMainFrame()) return false;
-                // links de fora (sites) abrem no navegador do celular
+                // 🌐 sites abrem no navegador de DENTRO do app (◀ ▶, endereço, ↗ para abrir no Chrome)
+                if (esquema.equals("http") || esquema.equals("https")) { abrirNavegador(u.toString()); return true; }
+                // WhatsApp, e-mail, telefone: abre no app certo
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignorado) { }
                 return true;
             }
@@ -185,7 +198,9 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Voz(), "AndroidVoz"); // 🎤 ditado pelo Android (a "janelinha" não tem o do Chrome)
         web.addJavascriptInterface(new Fala(), "AndroidFala"); // 🔊 ler em voz alta com as vozes do Android (a "janelinha" não tem speechSynthesis)
         ligarFala();
-        setContentView(web);
+        raiz = new FrameLayout(this);
+        raiz.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(raiz);
         pedirTudoNaPrimeiraVez();
         if (salvo != null) web.restoreState(salvo);
         else web.loadUrl(INICIO);
@@ -317,6 +332,8 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         // ⬅ botão VOLTAR do celular: 1º a página fecha o que estiver aberto (painel, janela);
         // 2º volta a página anterior; 3º na primeira tela NÃO fecha o app — só vai para o fundo, sem perder nada.
+        if (navVideo != null) { sairVideo(); return; }
+        if (navegadorAberto()) { if (nav.canGoBack()) nav.goBack(); else fecharNavegador(); return; }
         if (web == null) { moveTaskToBack(true); return; }
         web.evaluateJavascript("(function(){try{return !!(window.__voltarApp&&window.__voltarApp())}catch(e){return false}})()", r -> {
             if ("true".equals(r)) return;
@@ -466,7 +483,164 @@ public class MainActivity extends Activity {
     }
 
     /** Ponte JavaScript → Android: salva arquivos baixados na pasta Downloads. */
+    // ── 🌐 Navegador de verdade dentro do app: abre QUALQUER site (YouTube, GitHub, npm, Neon…) ──
+    // É o navegador do próprio Android (não uma "janelinha" de página), por isso os sites não bloqueiam.
+    private FrameLayout raiz;
+    private LinearLayout navCaixa;
+    private WebView nav;
+    private EditText navEnd;
+    private View navVideo;
+    private WebChromeClient.CustomViewCallback navVideoFim;
+
+    private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
+
+    private Button navBotao(String t, View.OnClickListener acao) {
+        Button b = new Button(this);
+        b.setText(t); b.setAllCaps(false); b.setTextSize(18);
+        b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
+        b.setPadding(dp(10), dp(6), dp(10), dp(6));
+        b.setTextColor(Color.WHITE); b.setBackgroundColor(Color.TRANSPARENT);
+        b.setOnClickListener(acao);
+        return b;
+    }
+
+    private String navArrumar(String t) {
+        t = t == null ? "" : t.trim();
+        if (t.isEmpty()) return "https://duckduckgo.com/";
+        if (t.startsWith("http://") || t.startsWith("https://")) return t;
+        if (!t.contains(" ") && t.contains(".")) return "https://" + t;
+        return "https://duckduckgo.com/?kl=br-pt&q=" + Uri.encode(t);
+    }
+
+    private void navGuardar(String url) {
+        if (url == null || !url.startsWith("http")) return;
+        SharedPreferences sp = getSharedPreferences("navegador", MODE_PRIVATE);
+        try {
+            JSONArray velho = new JSONArray(sp.getString("historico", "[]"));
+            JSONArray novo = new JSONArray();
+            novo.put(url);
+            for (int k = 0; k < velho.length() && novo.length() < 40; k++) { String u = velho.optString(k); if (!url.equals(u)) novo.put(u); }
+            sp.edit().putString("historico", novo.toString()).putString("ultimo", url).apply();
+        } catch (Exception ignorado) { }
+    }
+
+    void abrirNavegador(final String endereco) {
+        runOnUiThread(() -> {
+            if (navCaixa == null) montarNavegador();
+            navCaixa.setVisibility(View.VISIBLE);
+            navCaixa.bringToFront();
+            String alvo = endereco;
+            if (alvo == null || alvo.trim().isEmpty()) {
+                if (nav.getUrl() != null) return; // já tinha uma página aberta: só mostra de novo
+                alvo = getSharedPreferences("navegador", MODE_PRIVATE).getString("ultimo", "https://duckduckgo.com/");
+            }
+            nav.loadUrl(navArrumar(alvo));
+        });
+    }
+
+    private void fecharNavegador() {
+        runOnUiThread(() -> { if (navCaixa != null) { esconderTeclado(); navCaixa.setVisibility(View.GONE); } });
+    }
+
+    private boolean navegadorAberto() { return navCaixa != null && navCaixa.getVisibility() == View.VISIBLE; }
+
+    private void montarNavegador() {
+        navCaixa = new LinearLayout(this);
+        navCaixa.setOrientation(LinearLayout.VERTICAL);
+        navCaixa.setBackgroundColor(Color.parseColor("#0f1420"));
+        navCaixa.setClickable(true);
+        LinearLayout barra = new LinearLayout(this);
+        barra.setOrientation(LinearLayout.HORIZONTAL);
+        barra.setGravity(Gravity.CENTER_VERTICAL);
+        barra.setBackgroundColor(Color.parseColor("#151b2b"));
+        barra.setPadding(dp(2), dp(4), dp(2), dp(4));
+        barra.addView(navBotao("✕", v -> fecharNavegador()));
+        barra.addView(navBotao("◀", v -> { if (nav.canGoBack()) nav.goBack(); }));
+        barra.addView(navBotao("▶", v -> { if (nav.canGoForward()) nav.goForward(); }));
+        barra.addView(navBotao("↻", v -> nav.reload()));
+        navEnd = new EditText(this);
+        navEnd.setSingleLine(true);
+        navEnd.setTextSize(15);
+        navEnd.setTextColor(Color.WHITE);
+        navEnd.setHintTextColor(Color.parseColor("#8a94a8"));
+        navEnd.setHint("Endereço ou pesquisa");
+        navEnd.setBackgroundColor(Color.parseColor("#1b2337"));
+        navEnd.setPadding(dp(10), dp(8), dp(10), dp(8));
+        navEnd.setImeOptions(EditorInfo.IME_ACTION_GO);
+        navEnd.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        navEnd.setSelectAllOnFocus(true);
+        navEnd.setOnEditorActionListener((v, acao, ev) -> { nav.loadUrl(navArrumar(navEnd.getText().toString())); navEnd.clearFocus(); esconderTeclado(); return true; });
+        barra.addView(navEnd, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        barra.addView(navBotao("↗", v -> { try { if (nav.getUrl() != null) startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(nav.getUrl()))); } catch (Exception ignorado) { } }));
+        navCaixa.addView(barra, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        nav = new WebView(this);
+        WebSettings s = nav.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
+        s.setLoadWithOverviewMode(true);
+        s.setUseWideViewPort(true);
+        s.setBuiltInZoomControls(true);
+        s.setDisplayZoomControls(false);
+        s.setSupportMultipleWindows(false); // links que abrem "nova aba" abrem aqui mesmo
+        CookieManager.getInstance().setAcceptThirdPartyCookies(nav, true);
+        nav.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
+                Uri u = req.getUrl();
+                String e = u.getScheme() == null ? "" : u.getScheme().toLowerCase();
+                if (e.equals("http") || e.equals("https") || e.equals("about") || e.equals("data") || e.equals("blob")) return false;
+                // WhatsApp, e-mail, telefone, apps: abre no app certo
+                try {
+                    if (e.equals("intent")) startActivity(Intent.parseUri(u.toString(), Intent.URI_INTENT_SCHEME));
+                    else startActivity(new Intent(Intent.ACTION_VIEW, u));
+                } catch (Exception ignorado) { }
+                return true;
+            }
+            @Override
+            public void onPageStarted(WebView v, String url, android.graphics.Bitmap icone) { if (navEnd != null && !navEnd.hasFocus()) navEnd.setText(url); }
+            @Override
+            public void onPageFinished(WebView v, String url) { if (navEnd != null && !navEnd.hasFocus()) navEnd.setText(url); navGuardar(url); }
+        });
+        nav.setWebChromeClient(new WebChromeClient() {
+            // ⛶ vídeo em tela cheia (YouTube)
+            @Override
+            public void onShowCustomView(View vista, CustomViewCallback fim) {
+                if (navVideo != null) { fim.onCustomViewHidden(); return; }
+                navVideo = vista; navVideoFim = fim;
+                raiz.addView(vista, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            }
+            @Override
+            public void onHideCustomView() { sairVideo(); }
+        });
+        nav.setDownloadListener((url, agente, disp, tipo, tam) -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ignorado) { } });
+        navCaixa.addView(nav, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        raiz.addView(navCaixa, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    private void sairVideo() {
+        if (navVideo == null) return;
+        raiz.removeView(navVideo);
+        navVideo = null;
+        if (navVideoFim != null) { navVideoFim.onCustomViewHidden(); navVideoFim = null; }
+    }
+
+    private void esconderTeclado() {
+        try {
+            InputMethodManager im = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (im != null && navEnd != null) im.hideSoftInputFromWindow(navEnd.getWindowToken(), 0);
+        } catch (Exception ignorado) { }
+    }
+
     class Ponte {
+        /** 🌐 abre o navegador de dentro do app (vazio = a última página) */
+        @JavascriptInterface
+        public void navegar(String endereco) { abrirNavegador(endereco); }
+        /** 🌐 os últimos endereços visitados (lista JSON) */
+        @JavascriptInterface
+        public String navegadorHistorico() { return getSharedPreferences("navegador", MODE_PRIVATE).getString("historico", "[]"); }
         @JavascriptInterface
         public String salvar(String nome, String base64, String tipo) {
             try {

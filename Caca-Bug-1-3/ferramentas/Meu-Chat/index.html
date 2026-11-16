@@ -14,7 +14,9 @@
   <header id="topo">
     <button class="ic" id="bt-conversas" title="Conversas" aria-label="Conversas">☰</button>
     <div id="titulo"><b id="tit-conversa">Meu Chat</b><span id="tit-ia" class="mudo"></span></div>
-    <span class="chip" id="versao">v31/10-A</span>
+    <span class="chip" id="versao">v16/11-F</span>
+    <button class="ic" id="bt-contextos" title="Contextos" aria-label="Contextos">📌</button>
+    <button class="ic" id="bt-guia" title="Guia: o que é cada app e como usar" aria-label="Guia">🧭</button>
     <button class="ic" id="bt-memoria" title="Memória" aria-label="Memória">🧠</button>
     <button class="ic" id="bt-config" title="Configurar" aria-label="Configurar">⚙️</button>
   </header>
@@ -27,10 +29,13 @@
       <label class="op" title="Pesquisar na internet antes de responder"><input type="checkbox" id="op-busca"> 🌐 Internet</label>
       <label class="op" title="Falar as respostas em voz natural"><input type="checkbox" id="op-falar"> 🔊 Falar</label>
       <label class="op" title="Conversa por voz: fala e escuta sem tocar"><input type="checkbox" id="op-maos"> 🙌 Mãos livres</label>
+      <label class="op" title="Manda a mesma pergunta para várias IAs (toque e segure para escolher quais)"><input type="checkbox" id="op-comparar"> ⚖️ Comparar</label>
     </div>
     <div class="linha-in">
       <button class="ic" id="bt-foto" title="Mandar foto ou print" aria-label="Foto">📷</button>
       <input type="file" id="in-foto" accept="image/*" multiple hidden>
+      <button class="ic" id="bt-arq" title="Mandar arquivo (texto, código, PDF com texto) ou projeto .zip" aria-label="Arquivo">📎</button>
+      <input type="file" id="in-arq" multiple hidden>
       <textarea id="entrada" rows="1" placeholder="Escreva, ou toque no 🎤…"></textarea>
       <button class="ic grande" id="bt-mic" title="Falar" aria-label="Microfone">🎤</button>
       <button class="ic grande primario" id="bt-enviar" title="Enviar" aria-label="Enviar">➤</button>
@@ -56,6 +61,18 @@
   <div class="linha"><button class="bt primario" id="bt-mem-salvar">💾 Salvar memória</button><span id="mem-status" class="mudo pequeno"></span></div>
 </aside>
 
+<aside id="painel-guia" class="painel" hidden>
+  <div class="cab"><b>🧭 Guia dos seus apps</b><button class="ic" data-fechar>✕</button></div>
+  <p class="mudo pequeno">O que é cada app, a versão atual e como usar. Toque no nome para abrir. 🔊 lê para você; 🤖 o chat explica.</p>
+  <input class="campo" id="guia-busca" placeholder="Procurar (ex.: juntar, terminal, jurídico, links)…" autocomplete="off">
+  <div id="guia-corpo"></div>
+</aside>
+
+<aside id="painel-contextos" class="painel" hidden>
+  <div class="cab"><b>📌 Contextos</b><button class="ic" data-fechar>✕</button></div>
+  <div id="contextos-corpo"></div>
+</aside>
+
 <aside id="painel-config" class="painel" hidden>
   <div class="cab"><b>⚙️ Configurar</b><button class="ic" data-fechar>✕</button></div>
   <div id="config-corpo"></div>
@@ -73,13 +90,18 @@
 <script src="js/10-banco.js"></script>
 <script src="js/20-provedores.js"></script>
 <script src="js/30-memoria.js"></script>
+<script src="js/33-contextos.js"></script>
+<script src="js/34-guia.js"></script>
+<script src="js/35-jeito.js"></script>
 <script src="js/40-voz.js"></script>
 <script src="js/50-internet.js"></script>
 <script src="js/60-previa.js"></script>
 <script src="js/70-texto.js"></script>
 <script src="js/80-chat.js"></script>
 <script src="js/lib/cofre-arquivo.js"></script>
+<script src="js/lib/guia-versoes.js"></script>
 <script src="js/lib/guia-maikon.js"></script>
+<script src="js/lib/jszip.min.js"></script>
 <script src="js/85-config.js"></script>
 <script src="js/87-cofre.js"></script>
 <script src="js/90-backup.js"></script>

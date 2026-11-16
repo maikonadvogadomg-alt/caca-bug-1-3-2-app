@@ -26,13 +26,16 @@
     for (const e of esqueci) { const n = await esquecer(e); if (n) feitos.push('🧠 esqueci: ' + e); }
     return { limpo, feitos };
   }
-  async function sistema(extra) {
+  async function sistema(extra, provForcado) {
     const mem = await texto();
     const instr = MC.pref.get('instrucoes', '');
+    let prov = provForcado || ''; if (!prov) try { const l = await MC.ia.chaves(); const a = l.find((c) => c.id === MC.pref.get('chaveAtiva', '')) || l[0]; prov = a ? a.provedor : ''; } catch {}
     const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     return [
       'Você é a assistente pessoal do usuário, no app "Meu Chat". Responda sempre em português do Brasil, simples e direto.',
       'Hoje é ' + hoje + '.',
+      // 🎭 o jeito de conversar (todas as IAs + o desta IA)
+      MC.jeito ? MC.jeito.texto(prov) : '',
       'MEMÓRIA: abaixo está o que você sabe do usuário. Use quando ajudar, sem ficar repetindo.',
       'Quando o usuário disser algo que vale lembrar para sempre (quem ele é, preferências, projetos, decisões) ou pedir "lembra disso", escreva NO FIM da resposta, numa linha só: [[lembrar: o fato, curto]]. Para apagar algo da memória quando ele pedir: [[esquecer: palavra do fato]]. Não use isso para coisas passageiras.',
       'CÓDIGO: quando escrever código, mande o arquivo INTEIRO (nunca "troque o pedaço X"), num bloco com a linguagem: ```html, ```jsx, ```tsx, ```css, ```js, ```python. Uma página que funciona sozinha vai em um ```html só (CSS e JS dentro). Componente React vai em ```tsx ou ```jsx com "export default".',
@@ -40,6 +43,8 @@
       window.GuiaMaikon && MC.pref.get('saberFerramentas', true) && MC.pref.get('chaveAtiva', '') !== 'ollama' ? GuiaMaikon.texto : '',
       instr ? 'INSTRUÇÕES DO USUÁRIO:\n' + instr : '',
       '--- MEMÓRIA DO USUÁRIO ---\n' + (mem || '(vazia por enquanto)'),
+      // 📌 os contextos que ele ligou (assuntos em andamento)
+      MC.contextos ? MC.contextos.texto() : '',
       extra || '',
     ].filter(Boolean).join('\n\n');
   }

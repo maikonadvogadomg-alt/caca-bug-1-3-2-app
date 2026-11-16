@@ -1,5 +1,7 @@
 :root { --bg:#0f172a; --bg2:#16213a; --bg3:#1e2a47; --tx:#e6edf8; --mu:#9fb0cc; --li:#2b3a5c; --pri:#3b82f6; --ok:#34d399; --er:#f87171; --eu:#1d4ed8; }
 @media (prefers-color-scheme: light) { :root:not([data-tema="escuro"]) { --bg:#f6f7fb; --bg2:#ffffff; --bg3:#eef2f9; --tx:#1d2433; --mu:#5b6478; --li:#dde2ec; --pri:#2563eb; --ok:#0f7a52; --er:#b42318; --eu:#2563eb; } }
+/* 15/11: "Claro" escolhido na mão funciona em QUALQUER lugar (no APK/PWA o celular não avisa o tema, e antes só o "Automático" clareava) */
+:root[data-tema="claro"] { --bg:#f6f7fb; --bg2:#ffffff; --bg3:#eef2f9; --tx:#1d2433; --mu:#5b6478; --li:#dde2ec; --pri:#2563eb; --ok:#0f7a52; --er:#b42318; --eu:#2563eb; }
 :root[data-tema="escuro"] { --bg:#0f172a; --bg2:#16213a; --bg3:#1e2a47; --tx:#e6edf8; --mu:#9fb0cc; --li:#2b3a5c; --pri:#3b82f6; --ok:#34d399; --er:#f87171; --eu:#1d4ed8; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -71,3 +73,14 @@ hr { border:0; border-top:1px solid var(--li); margin:12px 0; }
 select.campo { padding:8px; }
 .vazio { text-align:center; color:var(--mu); padding:30px 16px; }
 .vazio h2 { color:var(--tx); margin:.3em 0; }
+
+/* 📌 contextos */
+#bt-contextos { width:auto; min-width:40px; font-size:1.05rem; padding:0 4px; }
+.ctx .linha { margin:4px 0; }
+#ctx-texto { width:100%; font-family:ui-monospace,monospace; font-size:.9rem; min-height:45vh; }
+/* 🧭 Guia (16/11) */
+.guia-app { border: 1px solid var(--li, #2a3550); border-radius: 12px; padding: 8px 10px; margin: 8px 0; background: var(--cartao, rgba(255,255,255,.03)); }
+.guia-app summary { cursor: pointer; font-size: 1.02rem; padding: 4px 0; }
+.guia-app p, .guia-app li { line-height: 1.5; margin: 6px 0; }
+.guia-app ol, .guia-app ul { padding-left: 22px; }
+#guia-busca { width: 100%; margin: 6px 0 4px; }

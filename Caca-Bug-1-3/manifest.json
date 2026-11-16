@@ -1,16 +1,14 @@
 {
-  "name": "Caca-Bug-1-3 (2)",
-  "short_name": "Caca-Bug-1-3",
-  "description": "Caca-Bug-1-3 (2)",
-  "id": "./app-caca-bug-1-3-2-hub",
-  "start_url": "./hub.html",
+  "id": "./app-caca-bug",
+  "name": "Caça-Bug",
+  "short_name": "Caça-Bug",
+  "description": "Acha e explica erros de projetos",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#0a0a0a",
-  "theme_color": "#5d5e53",
+  "background_color": "#ffffff",
+  "theme_color": "#00ff00",
   "lang": "pt-BR",
-  "dir": "ltr",
   "icons": [
     {
       "src": "icons/icon-48.png",
@@ -91,10 +89,6 @@
       "purpose": "any"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "Caça-Bug",
-      "url": "index.html"
-    }
-  ]
+  "orientation": "any",
+  "dir": "ltr"
 }
